@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>test</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --fg: #39ff6a;
+    --dim: #1f6f3a;
+    --chip: #12261a;
+    --accent: #ffd23a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(ellipse at top, #101a14 0%, var(--bg) 60%);
+    color: var(--fg);
+    font-family: "Courier New", ui-monospace, monospace;
+    overflow: hidden;
+  }
+  header {
+    text-align: center;
+    padding: 28px 16px 8px;
+    user-select: none;
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(28px, 6vw, 56px);
+    letter-spacing: 0.15em;
+    text-shadow: 0 0 12px rgba(57, 255, 106, 0.6);
+  }
+  .tagline {
+    color: var(--dim);
+    margin-top: 8px;
+    font-size: clamp(12px, 2vw, 16px);
+  }
+  .tagline b { color: var(--accent); font-weight: normal; }
+  #stage {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+  }
+  .test-word {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--fg);
+    text-shadow: 0 0 8px rgba(57, 255, 106, 0.5);
+    transition: transform 0.12s ease, color 0.12s ease;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .test-word:hover {
+    transform: translate(-50%, -50%) scale(1.35);
+    color: var(--accent);
+    text-shadow: 0 0 14px rgba(255, 210, 58, 0.8);
+  }
+  .chip {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    max-width: min(320px, 80vw);
+    background: var(--chip);
+    border: 1px solid var(--dim);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #c9ffd9;
+    box-shadow: 0 0 18px rgba(57, 255, 106, 0.25);
+    animation: pop 0.25s ease;
+  }
+  .chip .t {
+    color: var(--accent);
+    font-weight: bold;
+    display: block;
+    margin-bottom: 4px;
+  }
+  @keyframes pop {
+    from { opacity: 0; scale: 0.4; }
+    to   { opacity: 1; scale: 1; }
+  }
+  #status {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    text-align: center;
+    padding: 12px;
+    background: rgba(13, 17, 23, 0.9);
+    border-top: 1px solid var(--dim);
+    font-size: 13px;
+    color: var(--dim);
+    user-select: none;
+  }
+  #status b { color: var(--fg); font-weight: normal; }
+  #clear {
+    pointer-events: auto;
+    background: none;
+    border: 1px solid var(--dim);
+    color: var(--dim);
+    font: inherit;
+    border-radius: 6px;
+    padding: 2px 10px;
+    margin-left: 10px;
+    cursor: pointer;
+  }
+  #clear:hover { color: var(--accent); border-color: var(--accent); }
+</style>
+</head>
+<body>
+  <header>
+    <h1 id="big-test" class="test-word" style="position:static;transform:none;display:inline-block;">test</h1>
+    <p class="tagline">all this says is <b>test</b>. click a test &rarr; more tests appear.</p>
+  </header>
+  <div id="stage"></div>
+  <div id="status">
+    tests run: <b id="run">0</b> &middot; tests passed: <b id="passed">0</b> (100% &mdash; they're all jokes)
+    <button id="clear">clear tests</button>
+  </div>
+
+<script>
+  // The original content of this repo, preserved as clickable tests.
+  const TRIANGLE = [
+    [40, 40, 24],
+    [30, 40, 12],
+    [25, 40, 4],
+    [20, 40, 4],
+    [15, 40, 4],
+    [22, 40, 4],
+    [30, 40, 8],
+    [25, 40, 4],
+    [35, 40, 24]
+  ];
+
+  const JOKES = [
+    "Why do programmers prefer dark mode? Because light attracts bugs.",
+    "Why did the developer cross the road? To deploy on the other side.",
+    "There are 10 types of people: those who understand binary and those who don't.",
+    "A SQL query walks into a bar, sees two tables and asks: mind if I JOIN you?",
+    "Debugging is being the detective in a crime movie where you are also the murderer.",
+    "How many programmers does it take to change a light bulb? None. It's a hardware problem.",
+    "I'd tell you a UDP joke, but you might not get it.",
+    "Why was the function sad? Because it never got called.",
+    "There's no place like 127.0.0.1.",
+    "Why do Java developers wear glasses? Because they don't C#.",
+    "My code doesn't work and I don't know why. My code works and I don't know why.",
+    "Why did the developer quit? Too many exceptions.",
+    "A programmer's partner says: while you're out, buy some milk. They never came back.",
+    "Why do programmers mix up Halloween and Christmas? Because Oct 31 == Dec 25.",
+    "Why did the bug go to school? To get a little patch.",
+    "I told my computer I needed a break, and now it won't stop sending me Kit-Kats.",
+    "Why did the developer bring a ladder to work? To reach the cloud.",
+    "Python developers don't die, they just get garbage collected.",
+    "Why did the database blush? It saw a table join.",
+    "This test is a test about tests. It passed. Obviously."
+  ];
+
+  const stage = document.getElementById('stage');
+  const runEl = document.getElementById('run');
+  const passedEl = document.getElementById('passed');
+  const big = document.getElementById('big-test');
+  let run = 0;
+  let jokeIndex = 0;
+  const MAX_CHIPS = 60;
+
+  function updateStatus() {
+    runEl.textContent = run;
+    passedEl.textContent = run; // every test passes. they're jokes.
+  }
+
+  function spawnTest(xPct, yPct, asChip) {
+    run++;
+    const el = document.createElement('span');
+    el.className = 'test-word';
+    el.textContent = 'test';
+    const size = asChip ? 13 : 14 + Math.random() * 18;
+    el.style.fontSize = size + 'px';
+    el.style.left = xPct + '%';
+    el.style.top = (yPct || 20 + Math.random() * 65) + '%';
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      spawnChip();
+    });
+    stage.appendChild(el);
+    // keep the stage from drowning in tests
+    const words = stage.querySelectorAll('.test-word');
+    if (words.length > MAX_CHIPS + 30) words[0].remove();
+    updateStatus();
+  }
+
+  function spawnChip() {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    const t = document.createElement('span');
+    t.className = 't';
+    t.textContent = 'test #' + run + ' — PASSED';
+    const body = document.createElement('span');
+    body.textContent = JOKES[jokeIndex % JOKES.length];
+    jokeIndex++;
+    chip.appendChild(t);
+    chip.appendChild(body);
+    chip.style.left = (8 + Math.random() * 84) + '%';
+    chip.style.top = (12 + Math.random() * 70) + '%';
+    stage.appendChild(chip);
+    const chips = stage.querySelectorAll('.chip');
+    if (chips.length > MAX_CHIPS) chips[0].remove();
+    updateStatus();
+  }
+
+  // Render the original README triangle as clickable tests.
+  TRIANGLE.forEach(([y, x, n]) => {
+    for (let i = 0; i < n; i++) {
+      const el = document.createElement('span');
+      el.className = 'test-word';
+      el.textContent = 'test';
+      el.style.fontSize = '13px';
+      el.style.left = (x + i * 2.2 - n * 1.1) + '%';
+      el.style.top = y + '%';
+      el.addEventListener('click', () => spawnChip());
+      stage.appendChild(el);
+    }
+  });
+
+  big.addEventListener('click', () => spawnTest(50, 55, true));
+  document.getElementById('stage').addEventListener('click', () => spawnTest(15 + Math.random() * 70, undefined, false));
+  document.getElementById('clear').addEventListener('click', () => location.reload());
+</script>
+</body>
+</html>
